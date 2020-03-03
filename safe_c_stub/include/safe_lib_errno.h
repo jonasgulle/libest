@@ -31,6 +31,7 @@
 
 #ifndef __SAFE_LIB_ERRNO_H__
 #define __SAFE_LIB_ERRNO_H__
+
 #include <stddef.h>
 
 /*

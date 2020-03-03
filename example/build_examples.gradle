@@ -5,38 +5,34 @@ model {
         libs(PrebuiltLibraries) {
             libcrypto {
                 headers.srcDir System.getenv().SSL_DIR + "\\include"
-                        binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile =
-                            file(System.getenv().SSL_DIR + "\\bin\\libeay32.dll")
-                            sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\libeay32.lib")
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file(System.getenv().SSL_DIR + "\\bin\\libcrypto.dll")
+                    sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\libcrypto.lib")
                 }
             }
             libssl {
                 headers.srcDir System.getenv().SSL_DIR + "\\include"
-                        binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile =
-                            file(System.getenv().SSL_DIR + "\\bin\\ssleay32.dll")
-                            sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\ssleay32.lib")
+                binaries.withType(SharedLibraryBinary) {
+                sharedLibraryFile = file(System.getenv().SSL_DIR + "\\bin\\libssl.dll")
+                    sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\libssl.lib")
                 }
             }            
             est {
                 headers.srcDir "../src/est"
-                        binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile =
-                            file(System.getenv().EST_DIR + "\\est.dll")
-                            sharedLibraryLinkFile = file(System.getenv().EST_DIR + "\\est.lib")
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file(System.getenv().EST_DIR + "\\est.dll")
+                    sharedLibraryLinkFile = file(System.getenv().EST_DIR + "\\est.lib")
                 }
             }
         }
     }    
-
 }
 
 model {
     components {
         estclient(NativeExecutableSpec) {
             sources {
-                c{
+                c {
                     source {
                         srcDir "client"
                         include "*.c"
@@ -56,7 +52,7 @@ model {
         }
         estclient_simple(NativeExecutableSpec) {
             sources {
-                c{
+                c {
                     source {
                         srcDir "client-simple"
                         include "*.c"
@@ -76,7 +72,7 @@ model {
         }
         estserver(NativeExecutableSpec) {
             sources {
-                c{
+                c {
                     source {
                         srcDir "server"
                         include "*.c"
@@ -96,7 +92,7 @@ model {
         }
         estproxy(NativeExecutableSpec) {
             sources {
-                c{
+                c {
                     source {
                         srcDir "proxy"
                         include "*.c"

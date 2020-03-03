@@ -12,6 +12,7 @@
 #define HEADER_EST_H
 
 #ifdef WIN32
+#include <windows.h>
 #ifdef LIBEST_EXPORTS
 #define LIBEST_API __declspec(dllexport) 
 #else

@@ -17,6 +17,10 @@
 #ifndef TCP_CLI_WRAP_H
 #define TCP_CLI_WRAP_H
 
+#ifdef WIN32
+#include <windows.h>
+#endif
+
 #ifdef HAVE_LIBCURL
 #include <curl/curl.h>
 #endif

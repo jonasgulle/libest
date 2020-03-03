@@ -179,7 +179,7 @@ static int ossl_init_cert_store_from_raw (X509_STORE *store,
     while (sk_X509_INFO_num(sk)) {
         xi = sk_X509_INFO_shift(sk);
         if (xi->x509 != NULL) {
-            EST_LOG_INFO("Adding cert to store (%s)", xi->x509->name);
+            EST_LOG_INFO("Adding cert to store (%s)", X509_NAME_oneline(X509_get_issuer_name(xi->x509), NULL, 0));
             X509_STORE_add_cert(store, xi->x509);
 	    cert_cnt++;
         }

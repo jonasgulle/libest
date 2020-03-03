@@ -5,53 +5,47 @@ model {
         libs(PrebuiltLibraries) {
             libcrypto {
                 headers.srcDir System.getenv().SSL_DIR + "\\include"
-                        binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile =
-                            file(System.getenv().SSL_DIR + "\\bin\\libeay32.dll")
-                            sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\libeay32.lib")
+                    binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file(System.getenv().SSL_DIR + "\\bin\\libcrypto.dll")
+                    sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\libcrypto.lib")
                 }
             }
             libssl {
                 headers.srcDir System.getenv().SSL_DIR + "\\include"
-                        binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile =
-                            file(System.getenv().SSL_DIR + "\\bin\\ssleay32.dll")
-                            sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\ssleay32.lib")
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file(System.getenv().SSL_DIR + "\\bin\\libssl.dll")
+                    sharedLibraryLinkFile = file(System.getenv().SSL_DIR + "\\lib\\libssl.lib")
                 }
             }            
             cunit {
                 headers.srcDir System.getenv().CUNIT_DIR + "\\include"
-                        binaries.withType(StaticLibraryBinary) {
-                    staticLibraryFile =
-                            file(System.getenv().CUNIT_DIR + "\\lib\\libcunit.lib")
-                }               
+                    binaries.withType(StaticLibraryBinary) {
+                        staticLibraryFile = file(System.getenv().CUNIT_DIR + "\\lib\\libcunit.lib")
+                }
             }
             curl {
                 headers.srcDir System.getenv().CURL_DIR + "\\include"
-                        binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile =
-                            file(System.getenv().CURL_DIR + "\\bin\\libcurl.dll")
-                            sharedLibraryLinkFile = file(System.getenv().CURL_DIR + "\\lib\\libcurl.lib")
+                    binaries.withType(SharedLibraryBinary) {
+                        sharedLibraryFile = file(System.getenv().CURL_DIR + "\\bin\\libcurl.dll")
+                        sharedLibraryLinkFile = file(System.getenv().CURL_DIR + "\\lib\\libcurl.lib")
                 }
             }
             est {
                 headers.srcDir System.getenv().EST_DIR + "\\include"
-                        binaries.withType(SharedLibraryBinary) {
-                    sharedLibraryFile =
-                            file(System.getenv().EST_DIR + "\\est.dll")
-                            sharedLibraryLinkFile = file(System.getenv().EST_DIR + "\\est.lib")
+                binaries.withType(SharedLibraryBinary) {
+                    sharedLibraryFile = file(System.getenv().EST_DIR + "\\est.dll")
+                    sharedLibraryLinkFile = file(System.getenv().EST_DIR + "\\est.lib")
                 }
             }
         }
     }    
-
 }
 
 model {
     components {
         ut(NativeExecutableSpec) {
             sources {
-                c{
+                c {
                     source {
                         srcDir "UT"
                         include "**/*.c"
@@ -91,8 +85,7 @@ model {
                 cCompiler.args "-g", "-O0", "-Wall"
             }
             else if(toolChain in VisualCpp) {
-                if(file(System.getenv().CURL_DIR +"\\bin\\libcurl.dll").exists())
-                {
+                if(file(System.getenv().CURL_DIR +"\\bin\\libcurl.dll").exists()) {
                     cCompiler.define "HAVE_LIBCURL", "1"
                 }
                 cCompiler.define "HAVE_CUNIT"

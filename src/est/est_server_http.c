@@ -41,7 +41,7 @@
 #include "safe_mem_lib.h"
 #ifdef WIN32
 #include <WS2tcpip.h>
-#endif 
+#endif
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>

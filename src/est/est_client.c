@@ -23,8 +23,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#else
 #define snprintf _snprintf
+#else
 #include <Ws2tcpip.h>
 #include <BaseTsd.h>
 #include <WinDef.h>
@@ -98,11 +98,11 @@ static int est_client_X509_REQ_sign (X509_REQ *x, EVP_PKEY *pkey, const EVP_MD *
 {
     int rv;
     EVP_PKEY_CTX *pkctx = NULL;
-    EVP_MD_CTX mctx;
+    EVP_MD_CTX *mctx;
 
-    EVP_MD_CTX_init(&mctx);
+    mctx = EVP_MD_CTX_new();
 
-    if (!EVP_DigestSignInit(&mctx, &pkctx, md, NULL, pkey)) {
+    if (!EVP_DigestSignInit(mctx, &pkctx, md, NULL, pkey)) {
         return 0;
     }
 
@@ -114,10 +114,11 @@ static int est_client_X509_REQ_sign (X509_REQ *x, EVP_PKEY *pkey, const EVP_MD *
      * cases.  Setting this flag tells OpenSSL to run the ASN
      * encoding again rather than using the cached copy.
      */
-    x->req_info->enc.modified = 1; 
-    rv = X509_REQ_sign_ctx(x, &mctx);
+    /* TODO: Investigate if there is any alternative to this in OpenSSL 1.1.1 */
+    /*x->req_info->enc.modified = 1;*/
+    rv = X509_REQ_sign_ctx(x, mctx);
 
-    EVP_MD_CTX_cleanup(&mctx);
+    EVP_MD_CTX_free(mctx);
 
     return (rv);
 }
@@ -585,8 +586,8 @@ static EST_ERROR verify_cacert_resp (EST_CTX *ctx, unsigned char *cacerts,
          * add it to the untrusted store.
          */
         rv = X509_check_issued(current_cert, current_cert);
-	if (rv == X509_V_OK) {
-            EST_LOG_INFO("Adding cert to trusted store (%s)", current_cert->name);
+	    if (rv == X509_V_OK) {
+            EST_LOG_INFO("Adding cert to trusted store (%s)", X509_get_issuer_name(current_cert));
             X509_STORE_add_cert(trusted_cacerts_store, current_cert);
         }
     }
@@ -620,15 +621,15 @@ static EST_ERROR verify_cacert_resp (EST_CTX *ctx, unsigned char *cacerts,
             return ( EST_ERR_MALLOC);
         }
         current_cert = sk_X509_value(stack, i);
-        EST_LOG_INFO("Adding cert to store (%s)", current_cert->name);
-	X509_STORE_CTX_set_cert(store_ctx, current_cert);
+        EST_LOG_INFO("Adding cert to store (%s)", X509_get_issuer_name(current_cert));
+        X509_STORE_CTX_set_cert(store_ctx, current_cert);
         
         rv = X509_verify_cert(store_ctx);
         if (!rv) {
             /*
              * this cert failed verification.  Log this and continue on
              */
-            EST_LOG_WARN("Certificate failed verification (%s)", current_cert->name);
+            EST_LOG_WARN("Certificate failed verification (%s)", X509_get_issuer_name(current_cert));
             failed = 1;
         }
     }
@@ -1610,17 +1611,21 @@ static EST_ERROR est_client_check_x509 (X509 *cert)
     /*
      * Make sure the cert is signed
      */
-    if(!cert->signature) {
-	EST_LOG_ERR("The certificate provided does not contain a signature.");
-	return (EST_ERR_BAD_X509);
+    const ASN1_BIT_STRING *asn1_sig = NULL;
+    const X509_ALGOR      *sig_type = NULL;
+
+    X509_get0_signature(&asn1_sig, &sig_type, cert);
+    if(!asn1_sig) {
+    	EST_LOG_ERR("The certificate provided does not contain a signature.");
+    	return (EST_ERR_BAD_X509);
     }
 
     /*
      * Make sure the signature length is not invalid 
      */
-    if (cert->signature->length <= 0) {
-	EST_LOG_ERR("The certificate provided contains an invalid signature length.");
-	return (EST_ERR_BAD_X509);
+    if (asn1_sig->length <= 0) {
+        EST_LOG_ERR("The certificate provided contains an invalid signature length.");
+        return (EST_ERR_BAD_X509);
     }
     return (EST_ERR_NONE);
 }
@@ -1714,7 +1719,7 @@ static EST_ERROR est_client_enroll_req (EST_CTX *ctx, SSL *ssl, X509_REQ *req,
      * cases.  Setting this flag tells OpenSSL to run the ASN
      * encoding again rather than using the cached copy.
      * */
-    req->req_info->enc.modified = 1; 
+    //req->req_info->enc.modified = 1; 
     i2d_X509_REQ_bio(p10out, req);
     (void)BIO_flush(p10out);
     BIO_get_mem_ptr(p10out, &bptr);
@@ -3235,11 +3240,12 @@ EST_ERROR est_client_reenroll (EST_CTX *ctx, X509 *cert, int *pkcs7_len, EVP_PKE
      * in the config file to copyall to retain the
      * extensions in the CSR when issuing a new cert.
      */
-    if (cert->cert_info && cert->cert_info->extensions) {
-	ossl_rv = X509_REQ_add_extensions(req, cert->cert_info->extensions);
-	if (!ossl_rv) {
-	    EST_LOG_WARN("Failed to copy X509 extensions to the CSR. Your new certificate may not contain the extensions present in the old certificate.");
-	}
+    STACK_OF(X509_EXTENSION) *extensions = (STACK_OF(X509_EXTENSION) *) X509_get0_extensions(cert);
+    if (extensions) {
+        ossl_rv = X509_REQ_add_extensions(req, extensions);
+        if (!ossl_rv) {
+            EST_LOG_WARN("Failed to copy X509 extensions to the CSR. Your new certificate may not contain the extensions present in the old certificate.");
+        }
     }
 
     /*
@@ -3660,7 +3666,8 @@ EST_ERROR est_client_enable_srp (EST_CTX *ctx, int strength, char *uid, char *pw
      * enable the DSS and RSA auth cipher suites if we do.
      */
     store = SSL_CTX_get_cert_store(ctx->ssl_ctx);
-    if (store && store->objs && sk_X509_OBJECT_num(store->objs) > 0) {
+    STACK_OF(X509_OBJECT) *pobjs = X509_STORE_get0_objects(store);
+    if (store && pobjs && sk_X509_OBJECT_num(pobjs) > 0) {
 	EST_LOG_INFO("Enable SSL SRP cipher suites with RSA/DSS\n");
         rv = SSL_CTX_set_cipher_list(ctx->ssl_ctx, EST_CIPHER_LIST_SRP_AUTH);
     } else {

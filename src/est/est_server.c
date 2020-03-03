@@ -531,9 +531,7 @@ int est_tls_uid_auth (EST_CTX *ctx, SSL *ssl, X509_REQ *req)
     X509_ATTRIBUTE *attr;
     int i, j;
 
-    ASN1_TYPE *at;
     ASN1_BIT_STRING *bs = NULL;
-    ASN1_TYPE *t;
     int rv = EST_ERR_NONE;
     char *tls_uid;
     int diff;
@@ -544,35 +542,34 @@ int est_tls_uid_auth (EST_CTX *ctx, SSL *ssl, X509_REQ *req)
     i = X509_REQ_get_attr_by_NID(req, NID_pkcs9_challengePassword, -1);
     if (i < 0) {
         EST_LOG_INFO("Cert request does not contain PoP challengePassword attribute");
-	/*
-	 * If PoP is enabled, we must fail at this point
-	 * since the client didn't send the channel binding
-	 * info in the CSR.
-	 */
-	if (ctx->server_enable_pop) {
-	    EST_LOG_WARN("PoP enabled, CSR was not authenticated");
+        /*
+        * If PoP is enabled, we must fail at this point
+        * since the client didn't send the channel binding
+        * info in the CSR.
+        */
+        if (ctx->server_enable_pop) {
+	        EST_LOG_WARN("PoP enabled, CSR was not authenticated");
             return (EST_ERR_AUTH_FAIL_TLSUID);
-	} else {
-	    return (EST_ERR_NONE);
-	}
+        } else {
+            return (EST_ERR_NONE);
+        }
     } else {
         /*
          * Get a reference to the attribute now that we know where it's located
-	 * RFC 7030 requires that we check the PoP when it's present
+         * RFC 7030 requires that we check the PoP when it's present
          */
         attr = X509_REQ_get_attr(req, i);
-
         /*
          * If we found the attribute, get the actual value of the challengePassword
          */
         if (attr) {
-            if (attr->single) {
-                t = attr->value.single;
-                bs = t->value.bit_string;
-            } else {
-                j = 0;
-                at = sk_ASN1_TYPE_value(attr->value.set, j);
-                bs = at->value.asn1_string;
+            ASN1_TYPE *value;
+            value = X509_ATTRIBUTE_get0_type(attr, 0);
+            if (value && value->type == V_ASN1_BIT_STRING) {
+                bs = value->value.bit_string;
+             }
+            if (value && value->type == V_ASN1_GENERALSTRING) {
+                bs = value->value.asn1_string;
             }
         } else {
             EST_LOG_WARN("PoP challengePassword attribute not found in client cert request");
