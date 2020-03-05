@@ -513,7 +513,7 @@ LIBEST_API int est_convert_p7b64_to_pem(unsigned char *certs_p7, int certs_len, 
     @return void.
  */
 #define est_apps_startup() \
-    do { CRYPTO_malloc_init(); \
+    do { OPENSSL_malloc_init(); \
          ERR_load_crypto_strings(); OpenSSL_add_all_algorithms(); \
          ENGINE_load_builtin_engines(); \
          SSL_library_init(); \

@@ -29,7 +29,7 @@
 #endif /* WIN32 */ 
 
 #ifndef WIN32
-#include "est_config.h"
+//#include "est_config.h"
 #endif 
 /*
  * Version identifiers.  These should be updated appropriately
